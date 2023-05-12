@@ -1,0 +1,58 @@
+---
+title: "Project Proposal"
+format: html
+editor: visual
+---
+
+# Proposal for Semester Project
+
+Patterns & Trends in Environmental Data / Computational Movement
+
+Analysis Geo 880
+
+| Semester:      | FS23                                                                                        |
+|:----------------------|:-----------------------------------------------|
+| **Data:**      | Posmo bicycle data of Jan Burri which was collected during the time period of March to day. |
+| **Title:**     | Stop, Slow, Go, how stops affect bike travel time                                           |
+| **Student 1:** | Sophia Wentkowski                                                                           |
+| **Student 2:** | Jan Burri                                                                                   |
+
+## Abstract
+
+The aim of the project is to determine what affect stops have on the travel time of a cyclist. Given a specific route is being assessed, the route with the least number of stops will be determined in a second step. Primary data of the cyclist and data of the city of Zurich will be used to make these evaluations. The tool R will be used by applying the apprehended knowledge of the course.
+
+## Research Questions
+
+How do traffic lights affect the travel time of a cyclist on the route from Seefeld to the Allmend Brunau in Zurich Switzerland? Is there a combination of trajectories which would have less stops?
+
+## Results / products
+
+The authors expect that traffic lights increase the travel time of a cyclist, even if it is the most direct path. We assume that side and off-roads are faster despite longer distances and/ or rougher terrain.
+
+## Data
+
+The data of one of the authors (Jan Burri) was collected during April and May on his way to training and back which will be analyzed throughout this project. Due to an unfortunate accident, Sophia was unable to provide any data. In addition, a dataset containing the traffic lights and roads of the city of Zurich will be used to identify potential stops and routes. The collected data of the cyclist was collected with the application POSMO. All data not related to cycling was deleted. The data of the city of Zurich is available online under following link: https://data.stadt-zuerich.ch/dataset/ktzh_verkehrstechnik\_\_bsa\_\_*ogd*
+
+The needed data has been collected and will be cleaned and processed after the approval of the coaches.
+
+## Analytical concepts
+
+The moving trajectory will be specified by a temporal window measuring Euclidian distances. The trajectories will then be segmented into subtrajectories in a given threshold using the static points and steplength distribution. The moving segments will then be used to determine the duration of the travel time. Using the overlay of the traffic light's locations in Zurich, the meeting spots of the cyclist's trajectories and static lights can be determined. This is to ensure that the stops in our data arise from traffic light events.
+
+## R concepts
+
+For this project the authors will solely use R. The mainly used concept will be R-Markdown and Quatro. Functions will be used from the packages tidyverse, sf, tmap and more if need be.
+
+## Risk analysis
+
+Biggest challenge of our project would be to rightly determine where the traffic stops are and if the longest stops were made there. Also, if reoccurring stops occur at different places outside of traffic lights, to determine their origin.
+
+If we are unable to gather data on where traffic lights are positioned, we will have to assume their positions through the stops of the cyclist and make crosschecks with google maps to assess their position. In the highly unlikely event that this should prove to be impossible, we will try to evaluate the affect of weather conditions on the choice of route.
+
+## Questions?
+
+-   Is it a plausible project?
+
+-   Do you have prepared data on traffic lights and roads from the city of Zurich?
+
+-   How can we differentiate side and main roads?
