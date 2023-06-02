@@ -27,6 +27,8 @@ posmo<-read_csv("posmo.csv") |>
  st_as_sf(coords=c("lon_x", "lat_y"), crs=4326, remove=T) |> 
   st_transform(2056)
 
+posmo$datetime <- as.POSIXct(posmo$datetime,  tz= "UTC")
+
 posmo_coordinates <- st_coordinates(posmo)
 
 posmo <- cbind(posmo, posmo_coordinates)
@@ -62,8 +64,10 @@ posmo |>
   facet_wrap(~traj_id)
 
 #trajectory 19 seems to have combined two trajectries into one. An NA row is added between the two trajecotries that the rle_id can seperate them. 
+test <- posmo |> 
+  filter(traj_id==19)
 
-row_index <- 877
+row_index <- which(posmo$datetime == as.POSIXct("2023-04-27 20:42:23", tz="UTC"))
 posmo <- posmo |> 
   add_row(.after= row_index)
 
@@ -77,9 +81,13 @@ posmo |>
   geom_point(aes(color=traj_id))+ 
   facet_wrap(~traj_id)
 
-#because of a stop at coop, trajectories 13 and 15 were split up. These will be recombined in the trajectory 13
+#because of a stop at coop, trajectories 13 and 15 were split up. These will be recombined in the trajectory 15
 
 posmo$traj_id <- ifelse(posmo$traj_id == 13, 15,posmo$traj_id)
+
+# the same happend for traj_id 33 and 31. Will be comined in traj_id 31
+
+posmo$traj_id <- ifelse(posmo$traj_id == 33, 31,posmo$traj_id)
 
 #The break "trajectories" are not of interest and will be deleted and the real trajectories renumbered 
 posmo <- subset(posmo, !grepl("BREAK",traj,ignore.case = T))
@@ -91,10 +99,6 @@ posmo |>
   ggplot(aes(X,Y))+
   geom_point(aes(color=traj_id2))+
   facet_wrap(~traj_id2)
-
-#excluding data with more than 5 seconds
-#posmo <- subset(posmo, datetime < "2023-05-10")
-
 ```
 
 The definition of efficency for this paper is defined by two aspects: 
@@ -214,13 +218,9 @@ posmo_1min|>
 ## Analyzing the differnt parts of the trip
 ```{r}
 #Splitting the trajectory into different parts according to bottlenecks
-posmo_filter |> 
-  ggplot(aes(X,Y))+
-  geom_point()
-
-
 A_part <- posmo_filter |> 
-  filter(X <= 2682400) 
+  filter(X <= 2682400) |> 
+  filter(Y > 1245454.8177882368)
 
 B_part <- posmo_filter |> 
   filter(X > 2682400) |> 
@@ -297,6 +297,7 @@ A_length |>
   geom_point()
 
 #Checking for overlaps between the trajectories
+  # check email from nils to make overlap.
 
 A_part |> 
   group_by(traj_id) |> 
@@ -309,16 +310,20 @@ A_part_lines |>
 
 myn <- nrow(A_part)
 mymat <- matrix(nrow = myn, ncol = myn)
+
 for (i in 1:myn){
   for (j in 1:myn){
     print(i, j)
     inter <- st_intersection(A_part_lines_buff[i,], A_part_lines_buff[j,])
     mymat[i,j] <- as.numeric(st_area(inter))/as.numeric(st_area(A_part_lines_buff[i, ]))
-    
-  }
+    }
 }
 
-mymat > 0.6
+mymat
+
+posmo_filter |> 
+  filter(traj_id==15) |> 
+  mapview()
 
 ```
 
