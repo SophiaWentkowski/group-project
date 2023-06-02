@@ -102,7 +102,7 @@ The definition of efficency for this paper is defined by two aspects:
 
 #Results
 
-##Stops and roads
+##Stoplights and roads
 
 
 ##Trajectories split into segments
@@ -180,7 +180,7 @@ posmo_filter |>
   coord_fixed()
 ```
 
-
+##DELTE? - Duration of the segments  
 ```{r}
 #needed? 
 
@@ -210,7 +210,7 @@ posmo_1min|>
 
 ```
 
-## Analyzing the differnt parts of the trip
+## Creating the different subtrajectories of the trip
 ```{r}
 #Splitting the trajectory into different parts according to bottlenecks
 A_part <- posmo_filter |> 
@@ -224,23 +224,20 @@ B_part <- posmo_filter |>
 C_part <- posmo_filter |> 
   filter(X > 2683450) 
 
-A_part |> 
-  filter(static ==F) |> 
-  ggplot(aes(X,Y))+
-  geom_point(aes(color=segment_id))+
-  geom_path()
-
+#Visualizing the different subtrajectories and checking individual trajectories for anomalies
 A_part |> 
   filter(static ==F) |>
   ggplot(aes(X,Y))+
   geom_point(aes(color=traj_id))+ 
   facet_wrap(~traj_id)
 
-A_part |> 
-  ggplot(aes(X,Y))+
-  #geom_point(aes(color=static))+
-  geom_path(aes(color= traj_id))
+posmo_filter |> 
+  filter(traj_id==5) |> 
+  mapview()
+```
 
+##Number of stops per subtrajectory
+```{r}
 # Want to count the number of stops per part per trajectory
 A_stop <- A_part |>
   filter(static == T) |> 
@@ -261,10 +258,13 @@ C_stop <- C_part |>
   summarize(Stops = n())
 
 
-A_stop |> 
+C_stop |> 
   ggplot(aes(traj_id, Stops))+
   geom_point()
+```
 
+##Length of the subtrajectories
+```{r}
 #Want to know the length of each trajectory, I have to recompute this to know only the length of the moving segments
 A_length<- A_part |> 
   filter(static==F) |> 
@@ -292,6 +292,8 @@ A_length |>
   geom_point()
 ```
 
+
+##Similarity and groupping of trajectories
 ```{r}
 #Checking for overlaps between the trajectories
  library(igraph)
@@ -325,10 +327,9 @@ group_ids <- clusters(traj_group)$membership
 
 A_part_lines$group_id<-group_ids
 
-#Adding the group Ids to the subtrajectories
-
 A_part <- left_join(A_part,st_drop_geometry(A_part_lines), by="traj_id")
 
+#B_Part
 
 B_part_lines <- B_part |> 
   group_by(traj_id) |> 
@@ -359,10 +360,9 @@ group_ids <- clusters(traj_group)$membership
 
 B_part_lines$group_id<-group_ids
 
-#Adding the group Ids to the subtrajectories
-
 B_part <- left_join(B_part,st_drop_geometry(B_part_lines), by="traj_id")
 
+#C_Part
 
 C_part_lines <- C_part |> 
   group_by(traj_id) |> 
@@ -392,8 +392,6 @@ plot(traj_group)
 group_ids <- clusters(traj_group)$membership
 
 C_part_lines$group_id<-group_ids
-
-#Adding the group Ids to the subtrajectories
 
 C_part <- left_join(C_part,st_drop_geometry(C_part_lines), by="traj_id")
 ```
