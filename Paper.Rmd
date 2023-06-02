@@ -24,7 +24,12 @@ Following the different trajectories will be split up into different segments wh
 #Methods and materials
 ```{r}
 posmo<-read_csv("posmo.csv") |> 
- st_as_sf(coords=c("lon_x", "lat_y"), crs=2056, remove=F)
+ st_as_sf(coords=c("lon_x", "lat_y"), crs=4326, remove=T) |> 
+  st_transform(2056)
+
+posmo_coordinates <- st_coordinates(posmo)
+
+posmo <- cbind(posmo, posmo_coordinates)
 
 #cleaning the data
 posmo <- posmo[posmo$transport_mode=="Bike",]
@@ -52,7 +57,7 @@ posmo <- posmo |>
 
 #visualizing it
 posmo |> 
-  ggplot(aes(lon_x,lat_y))+
+  ggplot(aes(X,Y))+
   geom_point(aes(color=traj_id))+ 
   facet_wrap(~traj_id)
 
@@ -68,7 +73,7 @@ posmo <- posmo |>
     mutate(traj_id = rle_id(traj))
 
 posmo |> 
-  ggplot(aes(lon_x,lat_y))+
+  ggplot(aes(X,Y))+
   geom_point(aes(color=traj_id))+ 
   facet_wrap(~traj_id)
 
@@ -83,7 +88,7 @@ posmo <- posmo |>
     mutate(traj_id2 = rle_id(traj_id))
 
 posmo |> 
-  ggplot(aes(lon_x,lat_y))+
+  ggplot(aes(X,Y))+
   geom_point(aes(color=traj_id2))+
   facet_wrap(~traj_id2)
 
@@ -105,9 +110,7 @@ The definition of efficency for this paper is defined by two aspects:
 ```{r}
 #To be able to compute euclidean distances by hand, we need the coordinates stored in separate columns. The function st_coordinates extracts the coordinates from our sf object. We can bind these coordinates back to our sf object using cbind
 
-posmo_coordinates <- st_coordinates(posmo)
 
-posmo <- cbind(posmo, posmo_coordinates)
 posmo_filter <- select(posmo,datetime, X, Y, traj_id2)
 
 posmo_filter <- posmo_filter |> 
@@ -245,7 +248,7 @@ D_part |>
 D_part |> 
   ggplot(aes(X,Y))+
   #geom_point(aes(color=static))+
-  geom_line(aes(color= traj_id))
+  geom_path(aes(color= traj_id))
 
 # Want to count the number of stops per part per trajectory
 A_stop <- A_part |>
