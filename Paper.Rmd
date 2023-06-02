@@ -217,35 +217,34 @@ posmo_1min|>
 ## Analyzing the differnt parts of the trip
 ```{r}
 #Splitting the trajectory into different parts according to bottlenecks
+posmo_filter |> 
+  ggplot(aes(X,Y))+
+  geom_point()
+
 
 A_part <- posmo_filter |> 
-  filter(X <= 8.525) 
+  filter(X <= 2682400) 
 
 B_part <- posmo_filter |> 
-  filter(X > 8.525) |> 
-  filter(X <= 8.5295) 
+  filter(X > 2682400) |> 
+  filter(X <= 2683450) 
 
 C_part <- posmo_filter |> 
-  filter(X > 8.5295) |> 
-  filter(X <= 8.5425)
+  filter(X > 2683450) 
 
-D_part <- posmo_filter |> 
-  filter(X > 8.5425) |> 
-  filter(X <= 8.56)
-
-D_part |> 
+A_part |> 
   filter(static ==F) |> 
   ggplot(aes(X,Y))+
   geom_point(aes(color=segment_id))+
   geom_path()
 
-D_part |> 
+A_part |> 
   filter(static ==F) |>
   ggplot(aes(X,Y))+
   geom_point(aes(color=traj_id))+ 
   facet_wrap(~traj_id)
 
-D_part |> 
+A_part |> 
   ggplot(aes(X,Y))+
   #geom_point(aes(color=static))+
   geom_path(aes(color= traj_id))
@@ -269,11 +268,6 @@ C_stop <- C_part |>
   group_by(traj_id) |> 
   summarize(Stops = n())
 
-D_stop <- D_part |>
-  filter(static == T) |> 
-  distinct(traj_id, segment_id) |> 
-  group_by(traj_id) |> 
-  summarize(Stops = n())
 
 A_stop |> 
   ggplot(aes(traj_id, Stops))+
@@ -291,11 +285,6 @@ B_length <- B_part |>
   summarize(length = sum(steplength))
 
 C_length <- C_part |>
-  filter(static == F) |> 
-  group_by(traj_id) |> 
-  summarize(length = sum(steplength))
-
-D_length <- D_part |>
   filter(static == F) |> 
   group_by(traj_id) |> 
   summarize(length = sum(steplength))
