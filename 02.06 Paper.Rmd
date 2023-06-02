@@ -236,63 +236,6 @@ posmo_filter |>
   mapview()
 ```
 
-##Number of stops per subtrajectory
-```{r}
-# Want to count the number of stops per part per trajectory
-A_stop <- A_part |>
-  filter(static == T) |> 
-  distinct(traj_id, segment_id) |> 
-  group_by(traj_id) |> 
-  summarize(Stops = n())
-
-B_stop <- B_part |>
-  filter(static == T) |> 
-  distinct(traj_id, segment_id) |> 
-  group_by(traj_id) |> 
-  summarize(Stops = n())
-
-C_stop <- C_part |>
-  filter(static == T) |> 
-  distinct(traj_id, segment_id) |> 
-  group_by(traj_id) |> 
-  summarize(Stops = n())
-
-
-C_stop |> 
-  ggplot(aes(traj_id, Stops))+
-  geom_point()
-```
-
-##Length of the subtrajectories
-```{r}
-#Want to know the length of each trajectory, I have to recompute this to know only the length of the moving segments
-A_length<- A_part |> 
-  filter(static==F) |> 
-  group_by(traj_id) |> 
-  mutate(distance = sqrt((lead(X,1)-X)^2 +(lead(Y,1)-Y)^2))|> 
-  group_by(traj_id) |> 
-  summarize(length = sum(distance, na.rm=T))
-
-B_length<- B_part |> 
-  filter(static==F) |> 
-  group_by(traj_id) |> 
-  mutate(distance = sqrt((lead(X,1)-X)^2 +(lead(Y,1)-Y)^2))|> 
-  group_by(traj_id) |> 
-  summarize(length = sum(distance, na.rm=T))
-
-C_length<- C_part |> 
-  filter(static==F) |> 
-  group_by(traj_id) |> 
-  mutate(distance = sqrt((lead(X,1)-X)^2 +(lead(Y,1)-Y)^2))|> 
-  group_by(traj_id) |> 
-  summarize(length = sum(distance, na.rm=T))
-
-A_length |> 
-  ggplot(aes(x=traj_id,y=length))+
-  geom_point()
-```
-
-
 ##Similarity and groupping of trajectories
 ```{r}
 #Checking for overlaps between the trajectories
@@ -395,6 +338,80 @@ C_part_lines$group_id<-group_ids
 
 C_part <- left_join(C_part,st_drop_geometry(C_part_lines), by="traj_id")
 ```
+
+##Number of stops per subtrajectory
+```{r}
+# Want to count the number of stops per part per trajectory
+A_stop <- A_part |>
+  filter(static == T) |> 
+  distinct(traj_id, segment_id) |> 
+  group_by(traj_id) |> 
+  summarize(Stops = n())
+
+B_stop <- B_part |>
+  filter(static == T) |> 
+  distinct(traj_id, segment_id) |> 
+  group_by(traj_id) |> 
+  summarize(Stops = n())
+
+C_stop <- C_part |>
+  filter(static == T) |> 
+  distinct(traj_id, segment_id) |> 
+  group_by(traj_id) |> 
+  summarize(Stops = n())
+
+C_stop |> 
+  ggplot(aes(traj_id, Stops))+
+  geom_point()
+
+#Now per group
+A_stop_mean <- A_stop |> 
+  mutate(group_id = A_part$group_id[match(traj_id, A_part$traj_id)]) |> 
+  group_by(group_id) |> 
+  summarize(mean_stops = mean(Stops))
+
+B_stop_mean <- B_stop |> 
+  mutate(group_id = B_part$group_id[match(traj_id, B_part$traj_id)]) |> 
+  group_by(group_id) |> 
+  summarize(mean_stops = mean(Stops))
+
+C_stop_mean <- C_stop |> 
+  mutate(group_id = C_part$group_id[match(traj_id, C_part$traj_id)]) |> 
+  group_by(group_id) |> 
+  summarize(mean_stops = mean(Stops))
+
+```
+
+##Length of the subtrajectories
+```{r}
+#Want to know the length of each trajectory, I have to recompute this to know only the length of the moving segments
+A_length<- A_part |> 
+  filter(static==F) |> 
+  group_by(traj_id) |> 
+  mutate(distance = sqrt((lead(X,1)-X)^2 +(lead(Y,1)-Y)^2))|> 
+  group_by(traj_id) |> 
+  summarize(length = sum(distance, na.rm=T))
+
+B_length<- B_part |> 
+  filter(static==F) |> 
+  group_by(traj_id) |> 
+  mutate(distance = sqrt((lead(X,1)-X)^2 +(lead(Y,1)-Y)^2))|> 
+  group_by(traj_id) |> 
+  summarize(length = sum(distance, na.rm=T))
+
+C_length<- C_part |> 
+  filter(static==F) |> 
+  group_by(traj_id) |> 
+  mutate(distance = sqrt((lead(X,1)-X)^2 +(lead(Y,1)-Y)^2))|> 
+  group_by(traj_id) |> 
+  summarize(length = sum(distance, na.rm=T))
+
+A_length |> 
+  ggplot(aes(x=traj_id,y=length))+
+  geom_point()
+```
+
+
 
 
 
