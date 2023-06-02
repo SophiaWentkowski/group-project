@@ -294,7 +294,7 @@ A_length |>
 
 ```{r}
 #Checking for overlaps between the trajectories
-  # check email from nils to make overlap.
+ library(igraph)
 
 A_part |> 
   group_by(traj_id) |> 
@@ -319,9 +319,15 @@ for (i in 1:myn) {
   }
 }
 
-overlaps <- mymat> 0.6
+overlaps <- mymat> 0.8
 overlaps
 
+traj_group <- graph_from_adjacency_matrix(overlaps, mode = "undirected", weighted = TRUE, diag = FALSE)
+plot(traj_group)
+
+group_ids <- clusters(traj_group)$membership
+
+A_part$group_id<-group_ids
 
 ```
 
