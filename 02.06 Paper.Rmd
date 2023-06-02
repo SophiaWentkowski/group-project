@@ -296,43 +296,110 @@ A_length |>
 #Checking for overlaps between the trajectories
  library(igraph)
 
-A_part |> 
+A_part_lines <- A_part |> 
   group_by(traj_id) |> 
   summarise(do_union = FALSE) |> 
-  st_cast("LINESTRING") -> A_part_lines
+  st_cast("LINESTRING") 
 
+A_part_lines_buff <- A_part_lines |> 
+  st_buffer(50)
 
-A_part_lines |> 
-  st_buffer(50) -> A_part_lines_buff
+A_n_traj <- nrow(A_part_lines_buff)
+A_mymat <- matrix(nrow = A_n_traj, ncol = A_n_traj)
 
-myn <- nrow(A_part_lines_buff)
-mymat <- matrix(nrow = myn, ncol = myn)
-
-for (i in 1:myn) {
-  for (j in 1:myn) {
+for (i in 1:A_n_traj) {
+  for (j in 1:A_n_traj) {
     if (i == j) {
-      mymat[i, j] <- NA
+      A_mymat[i, j] <- NA
     } else {
       inter <- st_intersection(A_part_lines_buff[i, ], A_part_lines_buff[j, ])
-      mymat[i, j] <- as.numeric(st_area(inter)) / as.numeric(st_area(A_part_lines_buff[i, ]))
+      A_mymat[i, j] <- as.numeric(st_area(inter)) / as.numeric(st_area(A_part_lines_buff[i, ]))
     }
   }
 }
 
-overlaps <- mymat> 0.8
-overlaps
-
-traj_group <- graph_from_adjacency_matrix(overlaps, mode = "undirected", weighted = TRUE, diag = FALSE)
+traj_group <- graph_from_adjacency_matrix(A_mymat> 0.8, mode = "undirected", weighted = TRUE, diag = FALSE)
 plot(traj_group)
 
 group_ids <- clusters(traj_group)$membership
 
-A_part$group_id<-group_ids
+A_part_lines$group_id<-group_ids
 
+#Adding the group Ids to the subtrajectories
+
+A_part <- left_join(A_part,st_drop_geometry(A_part_lines), by="traj_id")
+
+
+B_part_lines <- B_part |> 
+  group_by(traj_id) |> 
+  summarise(do_union = FALSE) |> 
+  st_cast("LINESTRING") 
+
+B_part_lines_buff <- B_part_lines |> 
+  st_buffer(50)
+
+B_n_traj <- nrow(B_part_lines_buff)
+B_mymat <- matrix(nrow = B_n_traj, ncol = B_n_traj)
+
+for (i in 1:B_n_traj) {
+  for (j in 1:B_n_traj) {
+    if (i == j) {
+      B_mymat[i, j] <- NA
+    } else {
+      inter <- st_intersection(B_part_lines_buff[i, ], B_part_lines_buff[j, ])
+      B_mymat[i, j] <- as.numeric(st_area(inter)) / as.numeric(st_area(B_part_lines_buff[i, ]))
+    }
+  }
+}
+
+traj_group <- graph_from_adjacency_matrix(B_mymat> 0.8, mode = "undirected", weighted = TRUE, diag = FALSE)
+plot(traj_group)
+
+group_ids <- clusters(traj_group)$membership
+
+B_part_lines$group_id<-group_ids
+
+#Adding the group Ids to the subtrajectories
+
+B_part <- left_join(B_part,st_drop_geometry(B_part_lines), by="traj_id")
+
+
+C_part_lines <- C_part |> 
+  group_by(traj_id) |> 
+  summarise(do_union = FALSE) |> 
+  st_cast("LINESTRING") 
+
+C_part_lines_buff <- C_part_lines |> 
+  st_buffer(50)
+
+C_n_traj <- nrow(C_part_lines_buff)
+C_mymat <- matrix(nrow = C_n_traj, ncol = C_n_traj)
+
+for (i in 1:C_n_traj) {
+  for (j in 1:C_n_traj) {
+    if (i == j) {
+      C_mymat[i, j] <- NA
+    } else {
+      inter <- st_intersection(C_part_lines_buff[i, ], C_part_lines_buff[j, ])
+      C_mymat[i, j] <- as.numeric(st_area(inter)) / as.numeric(st_area(C_part_lines_buff[i, ]))
+    }
+  }
+}
+
+traj_group <- graph_from_adjacency_matrix(C_mymat> 0.8, mode = "undirected", weighted = TRUE, diag = FALSE)
+plot(traj_group)
+
+group_ids <- clusters(traj_group)$membership
+
+C_part_lines$group_id<-group_ids
+
+#Adding the group Ids to the subtrajectories
+
+C_part <- left_join(C_part,st_drop_geometry(C_part_lines), by="traj_id")
 ```
 
 
-```
+
 
 
 
