@@ -1,1 +1,3 @@
 # group-project
+
+Our project
