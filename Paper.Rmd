@@ -91,13 +91,15 @@ posmo |>
   facet_wrap(~traj_id2)
 
 # Save the data frame as a CSV file
-write.csv(posmo, file = "posmo_clean.csv", row.names = T)
+
+#posmo <- subset(posmo, select = -traj_id)
+#st_write(posmo, "posmo_clean.shp")
 
 ```
 
 The definition of efficency for this paper is defined by two aspects: 
 1. the smallest number of stops per trajectory
-2. the shortest distance 
+2. the shortest distance hhh
 
 #Results
 
@@ -178,9 +180,9 @@ posmo_filter |>
 
 # only the moving data
 posmo_filter |> 
-  filter(!static) |> 
+  filter(static) |> 
   ggplot(aes(X,Y))+
-  geom_point(aes(color=segment_id))+
+  geom_point(aes(color=traj_id))+
   coord_fixed()
 ```
 
@@ -279,8 +281,11 @@ B_length |>
 library(units)
 
 lights <- read_sf("osm_traffic_lights.gpkg")
-posmo<-read_csv("posmo_clean.csv") |> 
- st_as_sf(coords=c("lon_x", "lat_y"), crs=2056, na.rm=T)
+posmo<-read_sf("posmo.csv", ) |> 
+ st_as_sf(coords=c("lon_x", "lat_y"), crs=4326, remove=F) |> 
+  st_transform(2056)
+
+st_coordinates(posmo)
 
 #cleaning the data
 posmo <- posmo[complete.cases(posmo$lon_x, posmo$lat_y), ]
@@ -292,43 +297,65 @@ posmo <- posmo[complete.cases(posmo$lon_x, posmo$lat_y), ]
 tm_shape(posmo) +
   tm_dots(col = "traj_id2", palette = "Set1", size = 0.5) +
   tm_shape(lights) +
-  tm_symbols(col = "red", size = 0.5) +
+  tm_symbols(col = "blue", size = 0.5) +
+  tm_basemap("OpenStreetMap")
+
+tm_shape(posmo) +
+  tm_dots(col = "traj_id2", palette = "Set1", legend.show = TRUE, size = 0.5) +
+  tm_shape(lights) +
+  tm_symbols(col = "blue", size = 0.5) +
   tm_basemap("OpenStreetMap")
 
 # Display the map
 tmap_mode("view")
 
 ##RADIUS
-# Define the radius (in meters) within which a trajectory point should intersect with a traffic light
-radius <- set_units(2, "m")
 
-lights <- st_transform(lights, crs = st_crs(posmo)) #fit to same coordinate system when error
 
-# Calculate the distance between trajectory points and traffic lights
-filtered_lights <- st_join(lights, posmo, join = st_within, left = FALSE, dist = radius)
 
+
+
+
+
+posmo_buffer <- st_buffer(posmo_static, 10)
+
+#st_within
+within_buffer <- st_within(posmo_buffer, lights)
+
+# Extract the indices from the list
+indices <- unlist(within_buffer)
+
+# Subset the lights dataset using the indices
+lights_within_buffer <- lights[indices, ]
+
+lights_within_buffer
+
+
+
+# Define the radius  within which a trajectory point should intersect with a traffic light
+lights_buffer <- st_buffer(lights, 10)
+
+#st_within
+within_buffer <- st_within(posmo, lights_buffer)
+
+# Extract the indices from the list
+indices <- unlist(within_buffer)
+
+# Subset the posmo dataset using the indices
+posmo_within_buffer <- posmo[indices, ]
+
+posmo_within_buffer
 #distances <- st_distance(posmo, lights)
 
-tm_shape(filtered_lights) +
+tm_shape(lights_within_buffer) +
   tm_symbols(col = "red", size = 1) +
-  tm_shape(posmo) +
+  tm_shape(posmo_static) +
   tm_symbols(col = "blue", size = 0.5) +
   tm_basemap("OpenStreetMap")
 
 # Filter out the traffic lights that are within the specified radius of any trajectory point
 
-# Create a thematic map to visualize the filtered traffic lights and trajectories (doesnt work)
-map <- tm_shape(posmo_lines) +
-  tm_lines() +
-  tm_basemap("OpenStreetMap")
 
-# Check if filtered_lights is not empty, then add it to the map
-if (!is_empty(filtered_lights)) {
-  map <- map + tm_shape(filtered_lights) +
-    tm_symbols(col = "red", size = 1)
-}
-
-tmap_mode("view")
 ```
 
 Other ways to plot it
@@ -340,9 +367,8 @@ posmo  <- st_transform(posmo, "+proj=longlat +datum=WGS84")
 
 map <- leaflet()
 map <- addTiles(map)
-map <- addCircleMarkers(map, data = lights, color = "red", radius = 10)
-map <-addCircleMarkers(map, data = posmo, color = "blue", radius = 10)
-
+map <- addCircleMarkers(map, data = lights_within_buffer, color = "red", radius = 4)
+map <-addCircleMarkers(map, data = posmo_static, color = "blue", radius = 3)
 map
 lights_map <- mapview(lights)
 
@@ -361,7 +387,6 @@ combined_map
 #animating stuff
 library(gganimate)
 library(av)
-install.packages("transformr")
 library(transformr)
 library(leaflet)
 
