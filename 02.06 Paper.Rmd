@@ -215,14 +215,17 @@ posmo_1min|>
 #Splitting the trajectory into different parts according to bottlenecks
 A_part <- posmo_filter |> 
   filter(X <= 2682400) |> 
-  filter(Y > 1245454.8177882368)
+  filter(Y > 1245454.8177882368) |> 
+  select(datetime,X,Y,traj_id,geometry,segment_id,static)
 
 B_part <- posmo_filter |> 
   filter(X > 2682400) |> 
-  filter(X <= 2683450) 
+  filter(X <= 2683450)|> 
+  select(datetime,X,Y,traj_id,geometry,segment_id,static)
 
 C_part <- posmo_filter |> 
-  filter(X > 2683450) 
+  filter(X > 2683450) |> 
+  select(datetime,X,Y,traj_id,geometry,segment_id,static)
 
 #Visualizing the different subtrajectories and checking individual trajectories for anomalies
 A_part |> 
@@ -337,6 +340,19 @@ group_ids <- clusters(traj_group)$membership
 C_part_lines$group_id<-group_ids
 
 C_part <- left_join(C_part,st_drop_geometry(C_part_lines), by="traj_id")
+
+#Visualizing it
+C_part |> 
+  group_by(group_id) |> 
+  summarise(do_union = FALSE) |> 
+  st_cast("LINESTRING") |> 
+  plot()
+
+C_part |> 
+  group_by(group_id) |> 
+  ggplot(aes(X,Y, color=group_id))+
+  geom_path()
+
 ```
 
 ##Number of stops per subtrajectory
@@ -409,6 +425,27 @@ C_length<- C_part |>
 A_length |> 
   ggplot(aes(x=traj_id,y=length))+
   geom_point()
+
+#Now per group
+A_length_mean <- A_length |> 
+  mutate(group_id = A_part$group_id[match(traj_id, A_part$traj_id)]) |> 
+  group_by(group_id) |> 
+  summarize(mean_length = mean(length))
+
+B_length_mean <- B_length |> 
+  mutate(group_id = B_part$group_id[match(traj_id, B_part$traj_id)]) |> 
+  group_by(group_id) |> 
+  summarize(mean_length = mean(length))
+
+C_length_mean <- C_length |> 
+  mutate(group_id = C_part$group_id[match(traj_id, C_part$traj_id)]) |> 
+  group_by(group_id) |> 
+  summarize(mean_length = mean(length))
+
+A_length_mean |> 
+  ggplot(aes(x=group_id,y=mean_length))+
+  geom_point()
+
 ```
 
 
