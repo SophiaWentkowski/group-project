@@ -76,11 +76,6 @@ posmo[row_index+1, "traj"] <- "BREAK"
 posmo <- posmo |>
     mutate(traj_id = rle_id(traj))
 
-posmo |> 
-  ggplot(aes(X,Y))+
-  geom_point(aes(color=traj_id))+ 
-  facet_wrap(~traj_id)
-
 #because of a stop at coop, trajectories 13 and 15 were split up. These will be recombined in the trajectory 15
 
 posmo$traj_id <- ifelse(posmo$traj_id == 13, 15,posmo$traj_id)
@@ -295,7 +290,9 @@ C_length<- C_part |>
 A_length |> 
   ggplot(aes(x=traj_id,y=length))+
   geom_point()
+```
 
+```{r}
 #Checking for overlaps between the trajectories
   # check email from nils to make overlap.
 
@@ -308,22 +305,26 @@ A_part |>
 A_part_lines |> 
   st_buffer(50) -> A_part_lines_buff
 
-myn <- nrow(A_part)
+myn <- nrow(A_part_lines_buff)
 mymat <- matrix(nrow = myn, ncol = myn)
 
-for (i in 1:myn){
-  for (j in 1:myn){
-    print(i, j)
-    inter <- st_intersection(A_part_lines_buff[i,], A_part_lines_buff[j,])
-    mymat[i,j] <- as.numeric(st_area(inter))/as.numeric(st_area(A_part_lines_buff[i, ]))
+for (i in 1:myn) {
+  for (j in 1:myn) {
+    if (i == j) {
+      mymat[i, j] <- NA
+    } else {
+      inter <- st_intersection(A_part_lines_buff[i, ], A_part_lines_buff[j, ])
+      mymat[i, j] <- as.numeric(st_area(inter)) / as.numeric(st_area(A_part_lines_buff[i, ]))
     }
+  }
 }
 
-mymat
+overlaps <- mymat> 0.6
+overlaps
 
-posmo_filter |> 
-  filter(traj_id==15) |> 
-  mapview()
+
+```
+
 
 ```
 
