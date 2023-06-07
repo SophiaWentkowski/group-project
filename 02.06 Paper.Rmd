@@ -448,65 +448,49 @@ A_length_mean |>
 
 ```
 
+#
+The lights object has a CRS of WGS 84 (EPSG:4326), which is a geographic coordinate system using latitude and longitude. The posmo object has a CRS of CH1903+ / LV95 (EPSG:2056), which is a projected coordinate system specific to Switzerland.
+
+To perform spatial operations between these two objects, they need to be in the same CRS. In this case, we can transform the lights object to CH1903+ / LV95 (EPSG:2056) using the st_transform function before using st_within:
 
 
 
 ```{r}
-##RADIUS
-
-
-
-
-
-
-
-posmo_buffer <- st_buffer(posmo_static, 5)
-
-#st_within
-within_buffer <- st_within(lights, posmo_buffer)
-
-# Extract the indices from the list
-indices <- unlist(within_buffer)
-
-# Subset the lights dataset using the indices
-lights_within_buffer <- lights[indices, ]
-
-lights_within_buffer
-
-
-
-# Define the radius  within which a trajectory point should intersect with a traffic light
-lights_buffer <- st_buffer(lights, 10)
-
-#st_within
-within_buffer <- st_within(posmo, lights_buffer)
-
-# Extract the indices from the list
-indices <- unlist(within_buffer)
-
-# Subset the posmo dataset using the indices
-posmo_within_buffer <- posmo[indices, ]
-
-posmo_within_buffer
-#distances <- st_distance(posmo, lights)
-
-tm_shape(lights_within_buffer) +
-  tm_symbols(col = "red", size = 1) +
-  tm_shape(posmo_static) +
-  tm_symbols(col = "blue", size = 0.5) +
-  tm_basemap("OpenStreetMap")
-
-# Filter out the traffic lights that are within the specified radius of any trajectory point
-
+#first clean all the colomns
+lights_clean <- select(lights, osm_id, geom)
+lights_transformed <- st_transform(lights_clean, crs = st_crs(posmo))
 
 ```
 
+```{r}
+# Create a buffer around the traffic lights and define the buffer size (in meters)
+lights_buffer <- st_buffer(lights_transformed, 5)
+
+# Check if the traffic lights fall within the buffer
+ggplot() +
+  geom_sf(data = posmo_static) +
+  geom_sf(data = lights_transformed) +
+  geom_sf(data = lights_buffer, fill = NA)
+
+#Then I will join the two to see if the buffer is within
+posmo_join <- st_join(posmo_static, lights_buffer) 
+
+anzahl_in_wiese <- sum(!is.na(baeume_join$flaechen_typ))
+
+static_within_buffer <- st_join(lights_buffer,posmo_static,  join = "st_within", left =F)
+
+# View the resulting subset of traffic lights within the buffer
+View(lights_within_buffer)
+```
+
+
 Other ways to plot it
 ```{r}
+
 #coordinates system 
 st_crs(posmo$lat_y)
-lights <- st_transform(lights, "+proj=longlat +datum=WGS84")
-posmo  <- st_transform(posmo, "+proj=longlat +datum=WGS84")
+lights_map <- st_transform(lights, "+proj=longlat +datum=WGS84")
+posmo_map  <- st_transform(posmo, "+proj=longlat +datum=WGS84")
 
 map <- leaflet()
 map <- addTiles(map)
