@@ -451,7 +451,113 @@ A_length_mean |>
 
 
 
+```{r}
+##RADIUS
 
+
+
+
+
+
+
+posmo_buffer <- st_buffer(posmo_static, 5)
+
+#st_within
+within_buffer <- st_within(lights, posmo_buffer)
+
+# Extract the indices from the list
+indices <- unlist(within_buffer)
+
+# Subset the lights dataset using the indices
+lights_within_buffer <- lights[indices, ]
+
+lights_within_buffer
+
+
+
+# Define the radius  within which a trajectory point should intersect with a traffic light
+lights_buffer <- st_buffer(lights, 10)
+
+#st_within
+within_buffer <- st_within(posmo, lights_buffer)
+
+# Extract the indices from the list
+indices <- unlist(within_buffer)
+
+# Subset the posmo dataset using the indices
+posmo_within_buffer <- posmo[indices, ]
+
+posmo_within_buffer
+#distances <- st_distance(posmo, lights)
+
+tm_shape(lights_within_buffer) +
+  tm_symbols(col = "red", size = 1) +
+  tm_shape(posmo_static) +
+  tm_symbols(col = "blue", size = 0.5) +
+  tm_basemap("OpenStreetMap")
+
+# Filter out the traffic lights that are within the specified radius of any trajectory point
+
+
+```
+
+Other ways to plot it
+```{r}
+#coordinates system 
+st_crs(posmo$lat_y)
+lights <- st_transform(lights, "+proj=longlat +datum=WGS84")
+posmo  <- st_transform(posmo, "+proj=longlat +datum=WGS84")
+
+map <- leaflet()
+map <- addTiles(map)
+map <- addCircleMarkers(map, data = lights_within_buffer, color = "red", radius = 4)
+map <-addCircleMarkers(map, data = posmo_static, color = "blue", radius = 3)
+map
+lights_map <- mapview(lights)
+
+# Create a mapview object for the GPS points
+posmo_map <- mapview(posmo)
+
+# Combine the two mapview objects into a single map
+combined_map <- lights_map + posmo_map
+
+# View the combined map
+combined_map
+```
+
+
+```{r}
+#animating stuff
+library(gganimate)
+library(av)
+library(transformr)
+library(leaflet)
+
+
+# Convert posmo points to line segments
+posmo_lines <- posmo %>%
+  group_by(traj_id2) %>%
+  summarize() %>%
+  st_cast("LINESTRING")
+
+
+p <- posmo |> 
+  filter(datetime == 2023-04-11) |> 
+  ggplot(aes(X, Y)) +
+  geom_point(aes(traj_id)) +
+  labs(x = "Longitude", y = "Latitude") +
+  theme_minimal()
+
+# Animate the trajectory over time
+animation <- p +
+  transition_time(datetime) +
+  ease_aes('linear') +
+  shadow_wake(wake_length = 0.5)
+
+anim_save("animation.gif", animation)
+
+
+```
 
 
 
